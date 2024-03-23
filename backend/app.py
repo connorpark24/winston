@@ -1,20 +1,89 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from dotenv import load_dotenv
 import pandas as pd
 import datetime as dt
 import numpy as np
-import requests
+import openai
 import pdfplumber
+import os
+
+load_dotenv() 
+
+client = openai.OpenAI(
+    api_key=os.environ.get("OPENAI_API_KEY"),
+)
 
 app = Flask(__name__)
 app.config['DEBUG'] = False
 CORS(app)
 
+client = openai.OpenAI()
+
+def process_questions(input_text):
+    # Split the input text into individual questions
+    questions = input_text.strip().split('\n\n')
+
+    # Create an array of questions with their respective answers
+    parsed_questions = []
+
+    for question in questions:
+        lines = question.split('\n')
+        question_text = lines[0].split('. ', 1)[1]  # Remove the question number
+        answers = [line.split(') ', 1)[1] for line in lines[1:]]  # Remove the answer labels
+        parsed_questions.append({'question': question_text, 'answers': answers})
+
+    # Print the parsed questions
+    for q in parsed_questions:
+        print(q)
+
+    return parsed_questions
+
+def generate_questions(text):
+    # completion = client.chat.completions.create(messages=[
+    #       {"role": "system", "content": "You are a helpful assistant."},
+    #     {"role": "user", "content": f"Generate five multiple-choice questions with four options each based on the following text:\n{text}"}
+    # ], model="gpt-3.5-turbo")
+
+    # questions_obj = process_questions(completion.choices[0].message.content)
+
+    # print(questions_obj)
+    return process_questions("""1. What is the function of a p-type transistor in a circuit?
+A) Outputs 1 when input is 1
+B) Outputs 0 when input is 1
+C) Disconnected output when input is 1
+D) Outputs 1 when input is 0
+
+2. When connecting the outputs of a p-type and n-type transistor, what does the resulting circuit do?
+A) NOR operation
+B) OR operation
+C) AND operation
+D) NAND operation
+
+3. How can a NOR gate be changed to an OR gate using transistors?
+A) Altering the input wiring
+B) Reversing the connection of the transistors
+C) Adding an extra transistor
+D) Changing the output wiring
+
+4. Which configuration allows the implementation of an OR gate with 3 inputs using transistors?
+A) A p-type, B p-type, C p-type
+B) A n-type, B n-type, C n-type
+C) A p-type, B n-type, C p-type
+D) A n-type, B p-type, C n-type
+
+5. How can a NAND gate be converted to an AND gate using transistors?
+A) Switching the input connections
+B) Changing the transistor types
+C) Modifying the output wiring
+D) Reversing the output states""")
+
+
 @app.route('/process-pdf', methods=['POST'])
 def process_pdf():
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400
-
+    
     file = request.files['file']
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
@@ -22,19 +91,18 @@ def process_pdf():
     try:
         # Extract text from PDF
         with pdfplumber.open(file) as pdf:
-            text = ''.join([page.extract_text() for page in pdf.pages])
+            text = ''.join([page.extract_text() for page in pdf.pages if page.extract_text()])
 
-        # Call the quiz generator API
-        api_url = 'https://api.quizgenerator.com/generate'
-        response = requests.post(api_url, json={'text': text})
+        # Generate questions using OpenAI API
+        questions = generate_questions(text)
 
-        if response.status_code == 200:
-            questions = response.json().get('questions', [])
-            return jsonify({'questions': questions}), 200
-        else:
-            return jsonify({'error': 'Failed to generate questions'}), 500
+        print(questions)
+
+        return jsonify(questions), 200
     except Exception as e:
+        print(e)
         return jsonify({'error': str(e)}), 500
+    
 
 if __name__ == '__main__':
     app.run()
