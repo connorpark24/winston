@@ -7,6 +7,7 @@ import numpy as np
 import openai
 import pdfplumber
 import os
+import json
 
 load_dotenv() 
 
@@ -20,63 +21,31 @@ CORS(app)
 
 client = openai.OpenAI()
 
-def process_questions(input_text):
-    # Split the input text into individual questions
-    questions = input_text.strip().split('\n\n')
-
-    # Create an array of questions with their respective answers
-    parsed_questions = []
-
-    for question in questions:
-        lines = question.split('\n')
-        question_text = lines[0].split('. ', 1)[1]  # Remove the question number
-        answers = [line.split(') ', 1)[1] for line in lines[1:]]  # Remove the answer labels
-        parsed_questions.append({'question': question_text, 'answers': answers})
-
-    # Print the parsed questions
-    for q in parsed_questions:
-        print(q)
-
-    return parsed_questions
 
 def generate_questions(text):
-    # completion = client.chat.completions.create(messages=[
-    #       {"role": "system", "content": "You are a helpful assistant."},
-    #     {"role": "user", "content": f"Generate five multiple-choice questions with four options each based on the following text:\n{text}"}
-    # ], model="gpt-3.5-turbo")
+    prompt = (
+        "Generate five multiple-choice questions with four options each based on the following text. "
+        "Format the questions as a JSON array, where each question is an object with the keys 'question', "
+        "'choices', and 'answer'. The 'choices' key should be an array of strings that are each a choice."
+        "\n\nText:\n" + text
+    )
 
-    # questions_obj = process_questions(completion.choices[0].message.content)
+    completion = client.chat.completions.create(messages=[
+          {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": prompt}
+    ], model="gpt-3.5-turbo")
 
-    # print(questions_obj)
-    return process_questions("""1. What is the function of a p-type transistor in a circuit?
-A) Outputs 1 when input is 1
-B) Outputs 0 when input is 1
-C) Disconnected output when input is 1
-D) Outputs 1 when input is 0
+    questions = completion.choices[0].message.content
+    print(questions)
+    lines = questions.split('\n')
 
-2. When connecting the outputs of a p-type and n-type transistor, what does the resulting circuit do?
-A) NOR operation
-B) OR operation
-C) AND operation
-D) NAND operation
+    if lines[0] == '```json':
+        lines = lines[1:]
+    if lines[-1] == '```':
+        lines = lines[:-1]
 
-3. How can a NOR gate be changed to an OR gate using transistors?
-A) Altering the input wiring
-B) Reversing the connection of the transistors
-C) Adding an extra transistor
-D) Changing the output wiring
-
-4. Which configuration allows the implementation of an OR gate with 3 inputs using transistors?
-A) A p-type, B p-type, C p-type
-B) A n-type, B n-type, C n-type
-C) A p-type, B n-type, C p-type
-D) A n-type, B p-type, C n-type
-
-5. How can a NAND gate be converted to an AND gate using transistors?
-A) Switching the input connections
-B) Changing the transistor types
-C) Modifying the output wiring
-D) Reversing the output states""")
+    cleaned_json_string = '\n'.join(lines)
+    return cleaned_json_string
 
 
 @app.route('/process-pdf', methods=['POST'])
@@ -96,13 +65,11 @@ def process_pdf():
         # Generate questions using OpenAI API
         questions = generate_questions(text)
 
-        print(questions)
+        return questions, 200
 
-        return jsonify(questions), 200
     except Exception as e:
         print(e)
         return jsonify({'error': str(e)}), 500
     
-
 if __name__ == '__main__':
     app.run()

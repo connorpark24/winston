@@ -3,12 +3,14 @@ import { useDropzone } from "react-dropzone";
 
 type Question = {
   question: string;
-  answers: string[];
+  choices: string[];
+  answer: string;
 };
 
 function App() {
   const [pdf, setPdf] = useState<File | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [selectedAnswers, setSelectedAnswers] = useState<string[]>([]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: "application/pdf",
@@ -30,6 +32,8 @@ function App() {
         if (response.ok) {
           const data = await response.json();
           setQuestions(data);
+          console.log(data);
+          setSelectedAnswers(Array(data.length).fill(""));
         } else {
           console.error("Failed to upload PDF");
         }
@@ -39,8 +43,14 @@ function App() {
     }
   };
 
+  const handleAnswerChange = (index: number, answer: string) => {
+    const newSelectedAnswers = [...selectedAnswers];
+    newSelectedAnswers[index] = answer;
+    setSelectedAnswers(newSelectedAnswers);
+  };
+
   return (
-    <div className="h-screen w-screen flex flex-col items-center justify-center">
+    <div className="w-screen flex flex-col items-center justify-center p-16">
       <div className="bg-white shadow-md border-[1px] rounded-lg w-1/2 p-4">
         <h1 className="text-xl font-bold text-center mb-4">Upload your PDF</h1>
         <div
@@ -56,21 +66,37 @@ function App() {
         </div>
         {pdf && <p className="mt-4">Selected PDF: {pdf.name}</p>}
         <button
-          className="mt-4 bg-blue-500 text-white font-bold py-2 px-4 rounded"
+          className="mt-4 bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 px-4 rounded"
           onClick={handleSubmit}
         >
           Submit
         </button>
       </div>
-      {questions && ( // Only render if questions array is not empty
+      {questions && (
         <div className="w-1/2 mt-8">
           {questions.map((question, index) => (
-            <div key={index} className="bg-gray-100 p-4 rounded-lg mb-4">
+            <div key={index} className="bg-gray-100 p-4 rounded-xl mb-4">
               <p className="font-semibold">Question {index + 1}:</p>
               <p>{question.question}</p>
-              {question.answers.map((answer, answerIndex) => (
-                <p key={answerIndex}>{answer}</p>
-              ))}
+              <div>
+                <div className="mt-2">
+                  {question.choices.map((choice, choiceIndex) => (
+                    <label key={choiceIndex} className="block">
+                      <input
+                        type="radio"
+                        name={`question-${index}`}
+                        value={choice}
+                        checked={selectedAnswers[index] === choice}
+                        onChange={(e) =>
+                          handleAnswerChange(index, e.target.value)
+                        }
+                        className="mr-2"
+                      />
+                      {choice}
+                    </label>
+                  ))}
+                </div>
+              </div>
             </div>
           ))}
         </div>
