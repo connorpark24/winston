@@ -7,7 +7,7 @@ import numpy as np
 import openai
 import pdfplumber
 import os
-import json
+from difflib import SequenceMatcher
 
 load_dotenv() 
 
@@ -150,6 +150,22 @@ def true_false():
     except Exception as e:
         print(e)
         return jsonify({'error': str(e)}), 500
+
+@app.route('/check-similarity', methods=['POST'])
+def check_similarity():
+    data = request.json
+    responses = data.get('responses')
+    answers = data.get('answers')
+
+    if not responses or not answers:
+        return jsonify({'error': 'Missing responses or answers'}), 400
+
+    similarities = [
+        SequenceMatcher(None, response, answer).ratio()
+        for response, answer in zip(responses, answers)
+    ]
+    return jsonify({'similarities': similarities}), 200
+
     
 if __name__ == '__main__':
     app.run()

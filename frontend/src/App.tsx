@@ -29,7 +29,7 @@ function App() {
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [questionType, setQuestionType] = useState<string>("multiple-choice");
-  const [showOpenEndedAnswer, setShowOpenEndedAnswer] = useState<boolean[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string>("");
 
   const { getRootProps, getInputProps } = useDropzone({
     accept: "application/pdf",
@@ -39,35 +39,37 @@ function App() {
   });
 
   const handleSubmit = async () => {
-    if (pdf) {
-      setIsLoading(true);
-      const formData = new FormData();
-      formData.append("file", pdf);
+    if (!pdf) {
+      setErrorMessage("Please select a PDF file before generating questions.");
+      return;
+    }
 
-      try {
-        const response = await fetch(`http://127.0.0.1:5000/${questionType}`, {
-          method: "POST",
-          body: formData,
-        });
-        setIsLoading(false);
-        if (response.ok) {
-          const data = await response.json();
-          // Add questionType to each question in the data
-          const typedData = data.map((question: Question) => ({
-            ...question,
-            type: questionType,
-          }));
-          setQuestions(typedData);
-          setSelectedAnswers(Array(data.length).fill(""));
-          setIsSubmitted(false);
-          setShowOpenEndedAnswer(Array(data.length).fill(false));
-        } else {
-          console.error("Failed to upload PDF");
-        }
-      } catch (error) {
-        setIsLoading(false);
-        console.error("Error:", error);
+    setIsLoading(true);
+    setErrorMessage("");
+    const formData = new FormData();
+    formData.append("file", pdf);
+
+    try {
+      const response = await fetch(`http://127.0.0.1:5000/${questionType}`, {
+        method: "POST",
+        body: formData,
+      });
+      setIsLoading(false);
+      if (response.ok) {
+        const data = await response.json();
+        const typedData = data.map((question: Question) => ({
+          ...question,
+          type: questionType,
+        }));
+        setQuestions(typedData);
+        setSelectedAnswers(Array(data.length).fill(""));
+        setIsSubmitted(false);
+      } else {
+        console.error("Failed to upload PDF");
       }
+    } catch (error) {
+      setIsLoading(false);
+      console.error("Error:", error);
     }
   };
 
@@ -77,15 +79,41 @@ function App() {
     setSelectedAnswers(newSelectedAnswers);
   };
 
-  const handleQuizSubmit = () => {
+  const handleQuizSubmit = async () => {
     setIsSubmitted(true);
+
+    const openEndedQuestions = questions.filter((q) => q.type === "open-ended");
+    const responses = openEndedQuestions.map(
+      (_, index) => selectedAnswers[index]
+    );
+    const answers = openEndedQuestions.map((q) => q.answer);
+
+    const response = await fetch("http://127.0.0.1:5000/check-similarity", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ responses, answers }),
+    });
+
+    const { similarities } = await response.json();
+    const updatedSelectedAnswers = [...selectedAnswers];
+    similarities.forEach((similarity: number, index: number) => {
+      console.log(similarity);
+      if (similarity >= 0) {
+        updatedSelectedAnswers[questions.indexOf(openEndedQuestions[index])] =
+          answers[index];
+      }
+    });
+
+    setSelectedAnswers(updatedSelectedAnswers);
   };
 
   return (
     <div className="w-screen flex flex-col items-center justify-center p-16">
-      <h1 className="text-3xl font-bold text-center mb-4">HooHacks 24</h1>
+      <div className="bg-white border-[1px] rounded-lg w-1/2 p-8 items-center flex flex-col gap-y-4">
+        <h1 className="text-3xl font-bold text-center mb-4">HooHacks 24</h1>
 
-      <div className="bg-white shadow-md border-[1px] rounded-lg w-1/2 p-4 items-center flex flex-col gap-y-4">
         <div
           {...getRootProps()}
           className="border-[1px] p-4 h-24 text-center cursor-pointer mb-4 w-full flex items-center justify-center rounded-lg"
@@ -93,7 +121,7 @@ function App() {
           <input {...getInputProps()} />
           <p className="text-gray-400 ">Select a PDF</p>
         </div>
-        {pdf && <p className="">{pdf.name}</p>}
+
         <div className="flex gap-x-2 mb-4">
           <button
             className={`${
@@ -126,7 +154,10 @@ function App() {
             True/False
           </button>
         </div>
-
+        {pdf && <p className="">{pdf.name}</p>}
+        {errorMessage && (
+          <div className="text-red-500 text-center mb-4">{errorMessage}</div>
+        )}
         <button
           className={`${
             isLoading ? "bg-blue-400" : "bg-blue-500 hover:bg-blue-400"
@@ -153,7 +184,7 @@ function App() {
           <div>
             <div className="mt-2">
               {question.type === "multiple-choice" &&
-                question.choices.map((choice, choiceIndex) => (
+                question.choices.map((choice: string, choiceIndex: number) => (
                   <label key={choiceIndex} className="block">
                     <input
                       type="radio"
@@ -169,17 +200,15 @@ function App() {
                   </label>
                 ))}
               {question.type === "open-ended" && (
-                <div
-                  className="border-[1px] p-2 rounded-md cursor-pointer"
-                  onClick={() => {
-                    const newShowOpenEndedAnswer = [...showOpenEndedAnswer];
-                    newShowOpenEndedAnswer[index] = true;
-                    setShowOpenEndedAnswer(newShowOpenEndedAnswer);
-                  }}
-                >
-                  {showOpenEndedAnswer[index]
-                    ? question.answer
-                    : "Click to reveal answer"}
+                <div>
+                  <input
+                    type="text"
+                    value={selectedAnswers[index]}
+                    onChange={(e) => handleAnswerChange(index, e.target.value)}
+                    className="w-full p-1.5 text-sm mt-1 rounded-md"
+                    placeholder="Enter your answer"
+                    disabled={isSubmitted}
+                  />
                 </div>
               )}
               {question.type === "true-false" && (
