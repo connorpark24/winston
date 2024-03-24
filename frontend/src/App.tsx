@@ -139,7 +139,7 @@ function App() {
   return (
     <div className="w-screen flex flex-col items-center justify-center p-16">
       <div className="bg-white border-[1px] rounded-lg w-1/2 p-8 items-center flex flex-col gap-y-4">
-        <h1 className="text-3xl font-bold text-center">HooHacks '24</h1>
+        <h1 className="text-3xl font-bold text-center">Winston</h1>
         <p className="text-sm text-gray-500 text-center">
           <a
             href="https://www.linkedin.com/in/connorpark24"
