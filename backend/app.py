@@ -1,9 +1,6 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from dotenv import load_dotenv
-import pandas as pd
-import datetime as dt
-import numpy as np
 import openai
 import pdfplumber
 import os
@@ -51,7 +48,6 @@ def multiple_choice():
         ], model="gpt-3.5-turbo")
 
         questions = completion.choices[0].message.content
-        print(questions)
         lines = questions.split('\n')
 
         if lines[0] == '```json':
@@ -60,6 +56,7 @@ def multiple_choice():
             lines = lines[:-1]
 
         response = '\n'.join(lines)
+        print(response)
 
         return response, 200
 
@@ -82,7 +79,8 @@ def open_ended():
 
         prompt = (
             "Generate five open-ended questions based on the following text. "
-            "Format the questions as a JSON array, where each question is an object with the keys 'question' and 'answer'. "
+            "Format the questions as a JSON array, where each question is an object with the keys 'question' and 'answer', where 'question'"
+            "contains the provided question and 'answer' contains the correct answer. " 
             "The questions should only be related to computer science concepts and should not rely on any images that may have been in the PDF."
             "\n\nText:\n" + text
         )
@@ -93,7 +91,6 @@ def open_ended():
         ], model="gpt-3.5-turbo")
 
         questions = completion.choices[0].message.content
-        print(questions)
         lines = questions.split('\n')
 
         if lines[0] == '```json':
@@ -102,6 +99,7 @@ def open_ended():
             lines = lines[:-1]
 
         response = '\n'.join(lines)
+        print(response)
 
         return response, 200
 
@@ -136,7 +134,6 @@ def true_false():
         ], model="gpt-3.5-turbo")
 
         questions = completion.choices[0].message.content
-        print(questions)
         lines = questions.split('\n')
 
         if lines[0] == '```json':
@@ -145,6 +142,7 @@ def true_false():
             lines = lines[:-1]
 
         response = '\n'.join(lines)
+        print(response)
 
         return response, 200
 

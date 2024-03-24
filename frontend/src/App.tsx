@@ -31,10 +31,12 @@ function App() {
   const [questionType, setQuestionType] = useState<string>("multiple-choice");
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [similarityScores, setSimilarityScores] = useState<number[]>([]);
-  const [recentTopics, setRecentTopics] = useState<string[]>([]);
+  // const [recentTopics, setRecentTopics] = useState<string[]>([]);
 
   const { getRootProps, getInputProps } = useDropzone({
-    accept: "application/pdf",
+    accept: {
+      "application/pdf": [".pdf"],
+    },
     onDrop: (acceptedFiles) => {
       setPdf(acceptedFiles[0]);
     },
@@ -50,10 +52,10 @@ function App() {
     setErrorMessage("");
     const formData = new FormData();
     formData.append("file", pdf);
-    setRecentTopics((prevTopics) => [questionType, ...prevTopics.slice(0, 4)]);
+    // setRecentTopics((prevTopics) => [questionType, ...prevTopics.slice(0, 4)]);
 
     try {
-      const response = await fetch(`http://127.0.0.1:5000/${questionType}`, {
+      const response = await fetch(`http://127.0.0.1:8080/${questionType}`, {
         method: "POST",
         body: formData,
       });
@@ -91,7 +93,7 @@ function App() {
     );
     const answers = openEndedQuestions.map((q) => q.answer);
 
-    const response = await fetch("http://127.0.0.1:5000/check-similarity", {
+    const response = await fetch("http://127.0.0.1:8080/check-similarity", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -101,11 +103,10 @@ function App() {
 
     const { similarities } = await response.json();
     console.log(similarities);
-    const updatedSimilarityScores = questions.map(
-      (question) =>
-        question.type === "open-ended"
-          ? similarities[openEndedQuestions.indexOf(question)]
-          : -1 // Use -1 to indicate non-open-ended questions
+    const updatedSimilarityScores = questions.map((question) =>
+      question.type === "open-ended"
+        ? similarities[openEndedQuestions.indexOf(question)]
+        : -1
     );
 
     setSimilarityScores(updatedSimilarityScores);
@@ -248,6 +249,7 @@ function App() {
           <div>
             <div className="mt-2">
               {question.type === "multiple-choice" &&
+                "choices" in question &&
                 question.choices.map((choice: string, choiceIndex: number) => (
                   <label key={choiceIndex} className="block">
                     <input
