@@ -66,8 +66,8 @@ def multiple_choice():
         print(e)
         return jsonify({'error': str(e)}), 500
     
-@app.route('/fill-in-the-blank', methods=['POST'])
-def fill_in_the_blank():
+@app.route('/open-ended', methods=['POST'])
+def open_ended():
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400
     
@@ -80,7 +80,7 @@ def fill_in_the_blank():
             text = ''.join([page.extract_text() for page in pdf.pages if page.extract_text()])
 
         prompt = (
-            "Generate five fill-in-the-blank questions based on the following text. "
+            "Generate five open-ended questions based on the following text. "
             "Format the questions as a JSON array, where each question is an object with the keys 'question' and 'answer'. "
             "The questions should only be related to computer science concepts and should not rely on any images that may have been in the PDF."
             "\n\nText:\n" + text

@@ -5,19 +5,22 @@ type MCQuestion = {
   question: string;
   choices: string[];
   answer: string;
+  type: string;
 };
 
 type TFQuestion = {
   question: string;
   answer: string;
+  type: string;
 };
 
-type BlankQuestion = {
+type OEQuestion = {
   question: string;
   answer: string;
+  type: string;
 };
 
-type Question = MCQuestion | TFQuestion | BlankQuestion;
+type Question = MCQuestion | TFQuestion | OEQuestion;
 
 function App() {
   const [pdf, setPdf] = useState<File | null>(null);
@@ -26,6 +29,7 @@ function App() {
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [questionType, setQuestionType] = useState<string>("multiple-choice");
+  const [showOpenEndedAnswer, setShowOpenEndedAnswer] = useState<boolean[]>([]);
 
   const { getRootProps, getInputProps } = useDropzone({
     accept: "application/pdf",
@@ -56,6 +60,7 @@ function App() {
           setQuestions(typedData);
           setSelectedAnswers(Array(data.length).fill(""));
           setIsSubmitted(false);
+          setShowOpenEndedAnswer(Array(data.length).fill(false));
         } else {
           console.error("Failed to upload PDF");
         }
@@ -102,13 +107,13 @@ function App() {
           </button>
           <button
             className={`${
-              questionType === "fill-in-the-blank"
+              questionType === "open-ended"
                 ? "bg-blue-500 text-white"
                 : "bg-gray-200 text-gray-800"
             } font-bold py-2 px-4 rounded-md`}
-            onClick={() => setQuestionType("fill-in-the-blank")}
+            onClick={() => setQuestionType("open-ended")}
           >
-            Fill in the Blank
+            Open-Ended
           </button>
           <button
             className={`${
@@ -163,13 +168,19 @@ function App() {
                     {choice}
                   </label>
                 ))}
-              {question.type === "fill-in-the-blank" && (
-                <input
-                  type="text"
-                  value={selectedAnswers[index]}
-                  onChange={(e) => handleAnswerChange(index, e.target.value)}
-                  className="border-[1px] p-2 rounded-md"
-                />
+              {question.type === "open-ended" && (
+                <div
+                  className="border-[1px] p-2 rounded-md cursor-pointer"
+                  onClick={() => {
+                    const newShowOpenEndedAnswer = [...showOpenEndedAnswer];
+                    newShowOpenEndedAnswer[index] = true;
+                    setShowOpenEndedAnswer(newShowOpenEndedAnswer);
+                  }}
+                >
+                  {showOpenEndedAnswer[index]
+                    ? question.answer
+                    : "Click to reveal answer"}
+                </div>
               )}
               {question.type === "true-false" && (
                 <>
@@ -205,6 +216,12 @@ function App() {
           </div>
         </div>
       ))}
+      <button
+        className="bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 px-8 rounded-md mt-4"
+        onClick={handleQuizSubmit}
+      >
+        Submit Quiz
+      </button>
     </div>
   );
 }
