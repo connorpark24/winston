@@ -323,7 +323,7 @@ function App() {
         </button>
       )}
 
-      <div className="w-full p-4 mt-8 flex flex-col items-center gap-y-4">
+      {/* <div className="w-full p-4 mt-8 flex flex-col items-center gap-y-4">
         <h2 className="text-2xl font-bold mb-2">Recently Quizzed Topics</h2>
         <ul>
           {recentTopics.map((topic, index) => (
@@ -332,7 +332,7 @@ function App() {
             </li>
           ))}
         </ul>
-      </div>
+      </div> */}
     </div>
   );
 }

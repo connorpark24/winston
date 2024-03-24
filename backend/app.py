@@ -171,6 +171,8 @@ def check_similarity():
         similarity_percentage = (similarity + 1) / 2 
         similarities.append(similarity_percentage)
 
+    print(similarities)
+
     return jsonify({'similarities': similarities}), 200
 
     
