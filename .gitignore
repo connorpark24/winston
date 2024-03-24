@@ -12,6 +12,8 @@ dist
 dist-ssr
 *.local
 .env
+backend/wiki-news-300d-1M.vec
+backend/venv/
 
 # Editor directories and files
 .vscode/*

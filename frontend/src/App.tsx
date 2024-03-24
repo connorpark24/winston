@@ -31,6 +31,7 @@ function App() {
   const [questionType, setQuestionType] = useState<string>("multiple-choice");
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [similarityScores, setSimilarityScores] = useState<number[]>([]);
+  const [recentTopics, setRecentTopics] = useState<string[]>([]);
 
   const { getRootProps, getInputProps } = useDropzone({
     accept: "application/pdf",
@@ -49,6 +50,7 @@ function App() {
     setErrorMessage("");
     const formData = new FormData();
     formData.append("file", pdf);
+    setRecentTopics((prevTopics) => [questionType, ...prevTopics.slice(0, 4)]);
 
     try {
       const response = await fetch(`http://127.0.0.1:5000/${questionType}`, {
@@ -98,6 +100,7 @@ function App() {
     });
 
     const { similarities } = await response.json();
+    console.log(similarities);
     const updatedSimilarityScores = questions.map(
       (question) =>
         question.type === "open-ended"
@@ -113,9 +116,9 @@ function App() {
 
     if (question.type === "open-ended") {
       const score = similarityScores[index];
-      return score >= 0.6
+      return score >= 0.8
         ? "bg-green-200"
-        : score >= 0.4
+        : score >= 0.6
         ? "bg-yellow-200"
         : "bg-red-200";
     } else {
@@ -128,14 +131,55 @@ function App() {
   return (
     <div className="w-screen flex flex-col items-center justify-center p-16">
       <div className="bg-white border-[1px] rounded-lg w-1/2 p-8 items-center flex flex-col gap-y-4">
-        <h1 className="text-3xl font-bold text-center mb-4">HooHacks 24</h1>
-
+        <h1 className="text-3xl font-bold text-center">HooHacks '24</h1>
+        <p className="text-sm text-gray-500 text-center">
+          <a
+            href="https://www.linkedin.com/in/connorpark24"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-bold"
+          >
+            Connor Park
+          </a>
+          , University of Michigan <br />
+          <a
+            href="https://www.linkedin.com/in/samuelpark316"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-bold"
+          >
+            Samuel Park
+          </a>
+          , University of Virginia
+        </p>
+        <p className="text-sm text-gray-500 text-center">
+          Elevate your learning experience! Upload a PDF and let our AI-powered
+          tool generate insightful quiz questions to test your understanding of
+          the content. It's a smart way to reinforce knowledge and prepare for
+          exams.
+        </p>
         <div
           {...getRootProps()}
           className="border-[1px] p-4 h-24 text-center cursor-pointer mb-4 w-full flex items-center justify-center rounded-lg"
         >
           <input {...getInputProps()} />
-          <p className="text-gray-400 ">Select a PDF</p>
+          <div className="flex flex-row gap-x-3 items-center">
+            <p className="text-gray-500 text-sm">Select a PDF</p>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth="1.5"
+              stroke="currentColor"
+              className="w-6 h-6 text-gray-500"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9 8.25H7.5a2.25 2.25 0 0 0-2.25 2.25v9a2.25 2.25 0 0 0 2.25 2.25h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25H15m0-3-3-3m0 0-3 3m3-3V15"
+              />
+            </svg>
+          </div>
         </div>
 
         <div className="flex gap-x-2 mb-4">
@@ -144,7 +188,7 @@ function App() {
               questionType === "multiple-choice"
                 ? "bg-blue-500 text-white"
                 : "bg-gray-200 text-gray-800"
-            } font-bold py-2 px-4 rounded-md`}
+            } font-bold py-2 px-4 rounded-md text-sm`}
             onClick={() => setQuestionType("multiple-choice")}
           >
             Multiple Choice
@@ -154,7 +198,7 @@ function App() {
               questionType === "open-ended"
                 ? "bg-blue-500 text-white"
                 : "bg-gray-200 text-gray-800"
-            } font-bold py-2 px-4 rounded-md`}
+            } font-bold py-2 px-4 rounded-md text-sm`}
             onClick={() => setQuestionType("open-ended")}
           >
             Open-Ended
@@ -164,7 +208,7 @@ function App() {
               questionType === "true-false"
                 ? "bg-blue-500 text-white"
                 : "bg-gray-200 text-gray-800"
-            } font-bold py-2 px-4 rounded-md`}
+            } font-bold py-2 px-4 rounded-md text-sm`}
             onClick={() => setQuestionType("true-false")}
           >
             True/False
@@ -177,7 +221,7 @@ function App() {
         <button
           className={`${
             isLoading ? "bg-blue-400" : "bg-blue-500 hover:bg-blue-400"
-          } text-white font-bold py-2 px-8 rounded-md`}
+          } text-white font-bold py-2 px-8 rounded-md  text-sm`}
           onClick={handleSubmit}
           disabled={isLoading}
         >
@@ -213,17 +257,7 @@ function App() {
                   </label>
                 ))}
               {question.type === "open-ended" && (
-                <div
-                  className={`${
-                    isSubmitted
-                      ? similarityScores[index] >= 0.8
-                        ? "bg-green-200"
-                        : similarityScores[index] >= 0.5
-                        ? "bg-yellow-200"
-                        : "bg-red-200"
-                      : ""
-                  }`}
-                >
+                <div>
                   <input
                     type="text"
                     value={selectedAnswers[index]}
@@ -270,11 +304,22 @@ function App() {
         </div>
       ))}
       <button
-        className="bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 px-8 rounded-md mt-4"
+        className="bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 px-8 rounded-md mt-4 text-sm"
         onClick={handleQuizSubmit}
       >
         Submit Quiz
       </button>
+
+      <div className="w-full p-4 mt-8 flex flex-col items-center gap-y-4">
+        <h2 className="text-2xl font-bold mb-2">Recently Quizzed Topics</h2>
+        <ul>
+          {recentTopics.map((topic, index) => (
+            <li key={index} className="text-lg mb-1">
+              {topic}
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }

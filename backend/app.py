@@ -7,7 +7,8 @@ import numpy as np
 import openai
 import pdfplumber
 import os
-from difflib import SequenceMatcher
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 load_dotenv() 
 
@@ -150,20 +151,26 @@ def true_false():
     except Exception as e:
         print(e)
         return jsonify({'error': str(e)}), 500
-
+    
 @app.route('/check-similarity', methods=['POST'])
 def check_similarity():
     data = request.json
     responses = data.get('responses')
     answers = data.get('answers')
 
-    if not responses or not answers:
-        return jsonify({'error': 'Missing responses or answers'}), 400
+    if not responses or not answers or len(responses) != len(answers):
+        return jsonify({'error': 'Invalid or missing responses or answers'}), 400
 
-    similarities = [
-        SequenceMatcher(None, response, answer).ratio()
-        for response, answer in zip(responses, answers)
-    ]
+    similarities = []
+    vectorizer = TfidfVectorizer()
+
+    for response, answer in zip(responses, answers):
+        text_pair = [response, answer]
+        tfidf_matrix = vectorizer.fit_transform(text_pair)
+        similarity = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
+        similarity_percentage = (similarity + 1) / 2 
+        similarities.append(similarity_percentage)
+
     return jsonify({'similarities': similarities}), 200
 
     
