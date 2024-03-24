@@ -30,6 +30,7 @@ function App() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [questionType, setQuestionType] = useState<string>("multiple-choice");
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [similarityScores, setSimilarityScores] = useState<number[]>([]);
 
   const { getRootProps, getInputProps } = useDropzone({
     accept: "application/pdf",
@@ -97,16 +98,31 @@ function App() {
     });
 
     const { similarities } = await response.json();
-    const updatedSelectedAnswers = [...selectedAnswers];
-    similarities.forEach((similarity: number, index: number) => {
-      console.log(similarity);
-      if (similarity >= 0) {
-        updatedSelectedAnswers[questions.indexOf(openEndedQuestions[index])] =
-          answers[index];
-      }
-    });
+    const updatedSimilarityScores = questions.map(
+      (question) =>
+        question.type === "open-ended"
+          ? similarities[openEndedQuestions.indexOf(question)]
+          : -1 // Use -1 to indicate non-open-ended questions
+    );
 
-    setSelectedAnswers(updatedSelectedAnswers);
+    setSimilarityScores(updatedSimilarityScores);
+  };
+
+  const getBackgroundColorClass = (question: Question, index: number) => {
+    if (!isSubmitted) return "bg-gray-100";
+
+    if (question.type === "open-ended") {
+      const score = similarityScores[index];
+      return score >= 0.6
+        ? "bg-green-200"
+        : score >= 0.4
+        ? "bg-yellow-200"
+        : "bg-red-200";
+    } else {
+      return selectedAnswers[index] === question.answer
+        ? "bg-green-100"
+        : "bg-red-100";
+    }
   };
 
   return (
@@ -171,13 +187,10 @@ function App() {
       {questions.map((question, index) => (
         <div
           key={index}
-          className={`p-4 rounded-xl my-4 w-2/3 ${
-            isSubmitted
-              ? selectedAnswers[index] === question.answer
-                ? "bg-green-100"
-                : "bg-red-100"
-              : "bg-gray-100"
-          }`}
+          className={`p-4 rounded-xl my-4 w-2/3 ${getBackgroundColorClass(
+            question,
+            index
+          )}`}
         >
           <p className="font-semibold">Question {index + 1}:</p>
           <p>{question.question}</p>
@@ -200,7 +213,17 @@ function App() {
                   </label>
                 ))}
               {question.type === "open-ended" && (
-                <div>
+                <div
+                  className={`${
+                    isSubmitted
+                      ? similarityScores[index] >= 0.8
+                        ? "bg-green-200"
+                        : similarityScores[index] >= 0.5
+                        ? "bg-yellow-200"
+                        : "bg-red-200"
+                      : ""
+                  }`}
+                >
                   <input
                     type="text"
                     value={selectedAnswers[index]}
@@ -211,6 +234,7 @@ function App() {
                   />
                 </div>
               )}
+
               {question.type === "true-false" && (
                 <>
                   <label className="block">
