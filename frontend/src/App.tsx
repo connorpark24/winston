@@ -128,6 +128,13 @@ function App() {
     }
   };
 
+  const allAnswersProvided = questions.every((question, index) => {
+    if (question.type === "open-ended") {
+      return selectedAnswers[index].trim() !== "";
+    }
+    return selectedAnswers[index] !== "";
+  });
+
   return (
     <div className="w-screen flex flex-col items-center justify-center p-16">
       <div className="bg-white border-[1px] rounded-lg w-1/2 p-8 items-center flex flex-col gap-y-4">
@@ -303,12 +310,18 @@ function App() {
           </div>
         </div>
       ))}
-      <button
-        className="bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 px-8 rounded-md mt-4 text-sm"
-        onClick={handleQuizSubmit}
-      >
-        Submit Quiz
-      </button>
+
+      {questions.length > 0 && (
+        <button
+          className={`${
+            isSubmitted ? "bg-gray-400" : "bg-green-500 hover:bg-green-400"
+          } text-white font-bold py-2 px-8 rounded-md text-sm`}
+          onClick={handleQuizSubmit}
+          disabled={isSubmitted || !allAnswersProvided}
+        >
+          Submit Quiz
+        </button>
+      )}
 
       <div className="w-full p-4 mt-8 flex flex-col items-center gap-y-4">
         <h2 className="text-2xl font-bold mb-2">Recently Quizzed Topics</h2>
