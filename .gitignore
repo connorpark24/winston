@@ -12,8 +12,6 @@ dist
 dist-ssr
 *.local
 .env
-backend/wiki-news-300d-1M.vec
-backend/venv/
 
 # Editor directories and files
 .vscode/*
@@ -25,3 +23,7 @@ backend/venv/
 *.njsproj
 *.sln
 *.sw?
+
+server/wiki-news-300d-1M.vec
+server/venv/
+client/node_modules
