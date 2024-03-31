@@ -5,9 +5,7 @@ import openai
 import pdfplumber
 import os
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-
-load_dotenv() 
+from sklearn.metrics.pairwise import cosine_similarity 
 
 client = openai.OpenAI(
     api_key=os.environ.get("OPENAI_API_KEY"),
