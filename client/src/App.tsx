@@ -55,10 +55,13 @@ function App() {
     // setRecentTopics((prevTopics) => [questionType, ...prevTopics.slice(0, 4)]);
 
     try {
-      const response = await fetch(`http://127.0.0.1:8080/${questionType}`, {
-        method: "POST",
-        body: formData,
-      });
+      const response = await fetch(
+        `https://winston-hoohacks-24-0cf0a96ccee4.herokuapp.com/${questionType}`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
       setIsLoading(false);
       if (response.ok) {
         const data = await response.json();
@@ -88,18 +91,27 @@ function App() {
     setIsSubmitted(true);
 
     const openEndedQuestions = questions.filter((q) => q.type === "open-ended");
+
+    // If there are no open-ended questions, return early
+    if (openEndedQuestions.length === 0) {
+      return;
+    }
+
     const responses = openEndedQuestions.map(
       (_, index) => selectedAnswers[index]
     );
     const answers = openEndedQuestions.map((q) => q.answer);
 
-    const response = await fetch("http://127.0.0.1:8080/check-similarity", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ responses, answers }),
-    });
+    const response = await fetch(
+      "https://winston-hoohacks-24-0cf0a96ccee4.herokuapp.com/check-similarity",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ responses, answers }),
+      }
+    );
 
     const { similarities } = await response.json();
     console.log(similarities);
