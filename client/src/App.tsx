@@ -56,7 +56,7 @@ function App() {
 
     try {
       const response = await fetch(
-        `https://winston-hoohacks-24-0cf0a96ccee4.herokuapp.com/${questionType}`,
+        `https://winston-s5e3.onrender.com/${questionType}`,
         {
           method: "POST",
           body: formData,

@@ -43,7 +43,7 @@ def multiple_choice():
         completion = client.chat.completions.create(messages=[
             {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": prompt}
-        ], model="gpt-3.5-turbo")
+        ], model="gpt-4")
 
         questions = completion.choices[0].message.content
         lines = questions.split('\n')
